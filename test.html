@@ -45,7 +45,11 @@
           subprotocols = subprotocol_text.split(/,\s*/);
         }
         const proxyChecked = document.getElementById("proxyCheck").checked;
-        var wsURL = "ws" + document.location.href.slice(4) + "ws";
+        var wsURL = "ws" + document.location.href.slice(4);
+        if (wsURL[wsURL.length - 1] !== "/") {
+          wsURL += "/";
+        }
+        wsURL += "ws";
         if (proxyChecked) {
           wsURL += "-proxy";
         }
