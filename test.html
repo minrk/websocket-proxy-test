@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Websocket Test</title>
+  </head>
+  <body>
+    <h1>Websocket Test</h1>
+    <form action="" onsubmit="connect(event)">
+      <label for="proxy">
+        Use proxy
+        <input
+          type="checkbox"
+          id="proxyCheck"
+          checked
+          onchange="connect(event)"
+        />
+      </label>
+      <br />
+      <input type="text" id="subprotocol" autocomplete="off" />
+      <button>Set subprotocol</button>
+    </form>
+    <form action="" onsubmit="sendMessage(event)">
+      <input type="text" id="messageText" autocomplete="off" />
+      <button>Send</button>
+    </form>
+    <ul id="messages"></ul>
+    <script>
+      function logMessage(msg) {
+        const messages = document.getElementById("messages");
+        const message = document.createElement("li");
+        const content = document.createTextNode(msg);
+        message.appendChild(content);
+        messages.appendChild(message);
+      }
+      function connect(event) {
+        if (event) event.preventDefault();
+        if (window.ws) {
+          window.ws.close();
+          window.ws = undefined;
+        }
+        const input = document.getElementById("subprotocol");
+        const subprotocol_text = input.value.trim();
+        var subprotocols;
+        if (subprotocol_text) {
+          subprotocols = subprotocol_text.split(/,\s*/);
+        }
+        const proxyChecked = document.getElementById("proxyCheck").checked;
+        var wsURL = "ws" + document.location.href.slice(4) + "ws";
+        if (proxyChecked) {
+          wsURL += "-proxy";
+        }
+        logMessage(
+          `Connecting to ${wsURL} with subprotocols: ${
+            subprotocols || "no subprotocol"
+          }`
+        );
+        try {
+          const ws = (window.ws = new WebSocket(wsURL, subprotocols));
+        } catch (e) {
+          console.error("Error creating websocket:", e);
+          logMessage(`Error creating websocket: ${e.toString()}`);
+          return;
+        }
+        ws.onopen = function () {
+          logMessage(`Server accepted subprotocol: ${ws.protocol || "none"}`);
+        };
+        ws.onerror = function (event) {
+          logMessage(`error: ${JSON.stringify(event)}`);
+        };
+        ws.onmessage = function (event) {
+          logMessage(event.data);
+        };
+      }
+      function sendMessage(event) {
+        const input = document.getElementById("messageText");
+        ws.send(input.value);
+        input.value = "";
+        event.preventDefault();
+      }
+      connect();
+    </script>
+  </body>
+</html>
