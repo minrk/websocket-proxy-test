@@ -29,6 +29,7 @@ def get_subprotocols(websocket: WebSocket) -> list[str]:
 
 
 @app.websocket("/ws")
+@app.get("/ws")
 async def ws(connection: HTTPConnection):
     log.info("Backend websocket headers: %s", pprint.pformat(dict(connection.headers)))
     if isinstance(connection, WebSocket):
@@ -58,6 +59,7 @@ async def ws(connection: HTTPConnection):
 
 
 @app.websocket("/ws-proxy")
+@app.get("/ws-proxy")
 async def ws_proxy(connection: HTTPConnection):
     log.info("Proxy websocket headers: %s", pprint.pformat(dict(connection.headers)))
     if isinstance(connection, WebSocket):
