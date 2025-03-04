@@ -4,6 +4,7 @@ import pprint
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.requests import HTTPConnection
 from fastapi.responses import HTMLResponse
 from websockets.asyncio.client import connect as websocket_connect
 
@@ -28,12 +29,16 @@ def get_subprotocols(websocket: WebSocket) -> list[str]:
 
 
 @app.websocket("/ws")
-async def ws(websocket: WebSocket):
+async def ws(connection: HTTPConnection):
+    log.info("Backend websocket headers: %s", pprint.pformat(dict(connection.headers)))
+    if isinstance(connection, WebSocket):
+        websocket = connection
+    else:
+        log.error("[backend] Not a websocket request")
+        return HTMLResponse("Not a websocket request", status_code=400)
     subprotocols = get_subprotocols(websocket)
     accepted_subprotocols = [s for s in subprotocols or [] if "ignored" not in s]
     subprotocol = accepted_subprotocols[0] if accepted_subprotocols else None
-    headers = pprint.pformat(dict(websocket.headers))
-    log.info("Backend websocket headers: %s", headers)
     log.info(f"Accepting websocket with {subprotocol}")
     await websocket.accept(subprotocol)
     async def echo():
@@ -53,8 +58,14 @@ async def ws(websocket: WebSocket):
 
 
 @app.websocket("/ws-proxy")
-async def ws_proxy(websocket: WebSocket):
-    log.info("Proxy websocket headers: %s", pprint.pformat(dict(websocket.headers)))
+async def ws_proxy(connection: HTTPConnection):
+    log.info("Proxy websocket headers: %s", pprint.pformat(dict(connection.headers)))
+    if isinstance(connection, WebSocket):
+        websocket = connection
+    else:
+        log.error("[proxy] Not a websocket request")
+        return HTMLResponse("Not a websocket request", status_code=400)
+
     subprotocols = get_subprotocols(websocket)
     log.info("Proxy websocket requested subprotocols: %s", subprotocols)
     # hop once
@@ -101,3 +112,5 @@ async def ws_proxy(websocket: WebSocket):
         except WebSocketDisconnect:
             log.info("proxy websocket closed")
             [t.cancel() for t in tasks if not t.done()]
+
+
