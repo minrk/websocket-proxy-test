@@ -1,0 +1,15 @@
+services:
+  proxy:
+    image: nginx:1.27
+    volumes:
+      - type: bind
+        source: ./nginx-good.conf
+        target: /etc/nginx/conf.d/nginx-good.conf
+      - type: bind
+        source: ./nginx-bad.conf
+        target: /etc/nginx/conf.d/nginx-bad.conf
+    ports:
+      - "9000:9000"  # good port
+      - "9090:9090"  # bad port
+  backend:
+    image: ghcr.io/minrk/websocket-proxy-test
